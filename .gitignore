@@ -197,3 +197,6 @@ cython_debug/
 .cursorindexingignore
 
 node_modules/
+
+# Local assignment write-ups (do not push)
+REPORT-*.md
