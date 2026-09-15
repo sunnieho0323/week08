@@ -93,7 +93,7 @@ const Login = () => {
             variant="h4"
             gutterBottom
           >
-            KoalaTech University - Week 09 Deployment Task
+            KoalaTech University - Week 09 Deployment Task - v2
           </Typography>
 
           <Typography
