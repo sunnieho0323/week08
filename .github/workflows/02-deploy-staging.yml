@@ -149,3 +149,18 @@ jobs:
           kubectl get pods -n staging
           kubectl get services -n staging
           kubectl get pvc -n staging
+
+      - name: Deploy Prometheus and Grafana
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+            --namespace monitoring \
+            --create-namespace \
+            --wait \
+            --timeout 10m
+
+      - name: Show monitoring resources
+        run: |
+          kubectl get pods -n monitoring
+          kubectl get svc -n monitoring

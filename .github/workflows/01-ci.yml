@@ -103,15 +103,48 @@ jobs:
 
 
   # =========================================================
+  # Terraform plan (does not apply)
+  # =========================================================
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform plan
+        working-directory: terraform
+        run: terraform plan -no-color -input=false
+
+
+  # =========================================================
   # Build and Push Docker Images
   # =========================================================
   build-and-push:
     name: Build and Push ${{ matrix.image }}
     runs-on: ubuntu-latest
 
-    # All backend tests must pass before this job starts
+    # Tests and Terraform plan must pass before images are published
     needs:
       - backend-test
+      - terraform-plan
 
     # Build and push when code is pushed to main or manually triggered
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -159,6 +192,15 @@ jobs:
             --platform linux/amd64 \
             -t ${{ vars.ACR_LOGIN_SERVER }}/${{ matrix.image }}:${{ github.sha }} \
             ./${{ matrix.service }}
+
+      - name: Scan image with Docker Scout
+        if: matrix.service == 'user-service'
+        continue-on-error: true
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: ${{ vars.ACR_LOGIN_SERVER }}/${{ matrix.image }}:${{ github.sha }}
+          summary: true
 
       - name: Push Docker image with commit SHA
         run: |
